@@ -18,11 +18,12 @@ public class Parser : IParser
             var messageLengthBuffer = memoryBuffer.Slice(0, 2).ToArray();
             _length = messageLengthBuffer[0] * 256 + messageLengthBuffer[1];
             var bodyBuffer = new byte[_length];
+            var memory = bodyBuffer.AsMemory();
             var messageLength = _length;
             if (memoryBuffer.Length >= 3)
             {
                 messageType = GetMessageType(memoryBuffer);
-                ParsePartBody(bodyBuffer, memoryBuffer.Slice(2), ref messageLength);
+                ParsePartBody(memory, memoryBuffer.Slice(2), ref messageLength);
             }
 
             while (messageLength > 0)
@@ -32,13 +33,13 @@ public class Parser : IParser
                 {
                     messageType = GetMessageType(memoryBuffer);
                 }
-                ParsePartBody(bodyBuffer, memoryBuffer, ref messageLength);
+                ParsePartBody(memory, memoryBuffer, ref messageLength);
             }
 
             yield return messageType switch
             {
-                0 => ParseCardReaderState(bodyBuffer.AsMemory().Slice(3)),
-                1 => ParseOtherMessages(bodyBuffer.AsMemory().Slice(3)),
+                0 => ParseCardReaderState(memory.Slice(3)),
+                1 => ParseOtherMessages(memory.Slice(3)),
                 _ => throw new InvalidOperationException()
             };
 
@@ -46,9 +47,9 @@ public class Parser : IParser
         }
     }
 
-    private void ParsePartBody(byte[] dest, ReadOnlyMemory<byte> source, ref int length)
+    private void ParsePartBody(Memory<byte> memory, ReadOnlyMemory<byte> source, ref int length)
     {
-        source.CopyTo(dest.AsMemory(_length - length));
+        source.CopyTo(memory.Slice(_length - length));
         length -= source.Length;
     }
 
