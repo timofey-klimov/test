@@ -10,7 +10,6 @@ public class Parser : IParser
 {
     private const byte Separator = 28;
     private int _length;
-    private int messageCount = 0;
     public async IAsyncEnumerable<IMessage> Parse(ChannelReader<ReadOnlyMemory<byte>> source)
     {
         while (source.TryRead(out var memoryBuffer))
