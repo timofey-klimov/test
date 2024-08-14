@@ -17,13 +17,13 @@ public class Parser : IParser
             int? messageType = null;
             var messageLengthBuffer = memoryBuffer.Slice(0, 2).ToArray();
             _length = messageLengthBuffer[0] * 256 + messageLengthBuffer[1];
-            var bodyBuffer = new byte[_length];
-            var memory = bodyBuffer.AsMemory();
+            var body = new byte[_length];
+            var bodyBuffer = body.AsMemory();
             var messageLength = _length;
             if (memoryBuffer.Length >= 3)
             {
                 messageType = GetMessageType(memoryBuffer);
-                ParsePartBody(memory, memoryBuffer.Slice(2), ref messageLength);
+                ParsePartBody(bodyBuffer, memoryBuffer.Slice(2), ref messageLength);
             }
 
             while (messageLength > 0)
@@ -33,13 +33,13 @@ public class Parser : IParser
                 {
                     messageType = GetMessageType(memoryBuffer);
                 }
-                ParsePartBody(memory, memoryBuffer, ref messageLength);
+                ParsePartBody(bodyBuffer, memoryBuffer, ref messageLength);
             }
 
             yield return messageType switch
             {
-                0 => ParseCardReaderState(memory.Slice(3)),
-                1 => ParseOtherMessages(memory.Slice(3)),
+                0 => ParseCardReaderState(bodyBuffer.Slice(3)),
+                1 => ParseOtherMessages(bodyBuffer.Slice(3)),
                 _ => throw new InvalidOperationException()
             };
 
@@ -55,7 +55,7 @@ public class Parser : IParser
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int? GetMessageType(ReadOnlyMemory<byte> buffer)
+    private int? GetMessageType(ReadOnlyMemory<byte> buffer)
     {
         int? messageType;
         var firstBitBuffer = buffer.Slice(2, 1);
@@ -78,7 +78,7 @@ public class Parser : IParser
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void GetLuno(ReadOnlyMemory<byte> buffer, out string luno, out int separatorIndex)
+    private void GetLuno(ReadOnlyMemory<byte> buffer, out string luno, out int separatorIndex)
     {
         separatorIndex = buffer.Span.IndexOf(Separator);
         luno = Encoding.ASCII.GetString(buffer.Slice(0, separatorIndex).Span);
