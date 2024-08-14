@@ -47,9 +47,10 @@ public class Parser : IParser
         }
     }
 
-    private void ParsePartBody(Memory<byte> memory, ReadOnlyMemory<byte> source, ref int length)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ParsePartBody(Memory<byte> destination, ReadOnlyMemory<byte> source, ref int length)
     {
-        source.CopyTo(memory.Slice(_length - length));
+        source.CopyTo(destination.Slice(_length - length));
         length -= source.Length;
     }
 
